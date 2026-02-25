@@ -89,7 +89,6 @@ public sealed class SettingsForm : Form
             AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.DisplayedCells,
         };
         _rulesGrid.DataError += OnRulesGridDataError;
-        _rulesGrid.EditingControlShowing += OnRulesGridEditingControlShowing;
 
         _rulesGrid.Columns.Add(new DataGridViewCheckBoxColumn { DataPropertyName = nameof(RuleRow.Enabled), HeaderText = "Enabled", ToolTipText = "체크 시 이 규칙 사용" });
         _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.Name), HeaderText = "Name", Width = 180, ToolTipText = "규칙 표시 이름" });
@@ -127,6 +126,9 @@ public sealed class SettingsForm : Form
         var addRuleButton = new Button { Text = "규칙 추가", AutoSize = true };
         addRuleButton.Click += (_, _) => _rows.Add(new RuleRow());
 
+        var deleteRuleButton = new Button { Text = "선택 규칙 삭제", AutoSize = true };
+        deleteRuleButton.Click += (_, _) => DeleteSelectedRules();
+
         var pickProcessButton = new Button { Text = "프로세스 파일 선택", AutoSize = true };
         pickProcessButton.Click += (_, _) => PickProcessFileForSelectedRule();
 
@@ -137,6 +139,7 @@ public sealed class SettingsForm : Form
         buttonPanel.Controls.Add(applyButton);
         buttonPanel.Controls.Add(cancelButton);
         buttonPanel.Controls.Add(addRuleButton);
+        buttonPanel.Controls.Add(deleteRuleButton);
         buttonPanel.Controls.Add(clearAdvancedButton);
         buttonPanel.Controls.Add(pickProcessButton);
 
@@ -152,15 +155,6 @@ public sealed class SettingsForm : Form
     {
         _logger.Warn($"Rules grid edit error at row={e.RowIndex}, column={e.ColumnIndex}: {e.Exception?.Message}");
         e.ThrowException = false;
-    }
-
-    private void OnRulesGridEditingControlShowing(object? sender, DataGridViewEditingControlShowingEventArgs e)
-    {
-        if (e.Control is ComboBox comboBox)
-        {
-            comboBox.AutoCompleteMode = AutoCompleteMode.None;
-            comboBox.AutoCompleteSource = AutoCompleteSource.None;
-        }
     }
 
     private void SaveAndClose()
@@ -231,6 +225,39 @@ public sealed class SettingsForm : Form
         row.WindowTitleRegex = null;
         row.WindowClassExact = null;
         _rulesGrid.Refresh();
+    }
+
+    private void DeleteSelectedRules()
+    {
+        _rulesGrid.EndEdit();
+
+        var selectedRows = _rulesGrid.SelectedRows.Cast<DataGridViewRow>()
+            .Select(r => r.DataBoundItem)
+            .OfType<RuleRow>()
+            .Distinct()
+            .ToList();
+
+        if (_rulesGrid.CurrentRow?.DataBoundItem is RuleRow current && !selectedRows.Contains(current))
+        {
+            selectedRows.Add(current);
+        }
+
+        if (selectedRows.Count == 0)
+        {
+            MessageBox.Show("삭제할 규칙을 선택하세요.", "Nope.exe", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        var result = MessageBox.Show($"선택한 규칙 {selectedRows.Count}개를 삭제할까요?", "규칙 삭제", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        if (result != DialogResult.Yes)
+        {
+            return;
+        }
+
+        foreach (var row in selectedRows)
+        {
+            _rows.Remove(row);
+        }
     }
 
     private RuleRow? GetSelectedRuleRow()

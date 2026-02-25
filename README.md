@@ -83,6 +83,7 @@ dotnet run -c Release -- --uninstall-startup
 
 - 공통 설정: `pollIntervalMs`, `cooldownSeconds`
 - 규칙 행별 편집: enabled, 조건(match), action, timeout
+- 규칙 삭제: 행 선택 후 **선택 규칙 삭제** 버튼
 - 빠른 설정: 규칙 행 선택 후 **프로세스 파일 선택** 버튼으로 exe를 고르면 `processNameExact`/`processPathExact` 자동 입력
 - **적용/저장** 시 현재 실행 중 설정에 반영되고 `rules.json`에 저장됩니다.
 - 정규식이 잘못되면 저장 전에 오류를 표시합니다.

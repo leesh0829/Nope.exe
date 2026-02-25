@@ -5,7 +5,7 @@ namespace NopeExe;
 internal static class Program
 {
     [STAThread]
-    private static async Task<int> Main(string[] args)
+    private static int Main(string[] args)
     {
         var argSet = new HashSet<string>(args, StringComparer.OrdinalIgnoreCase);
 
@@ -50,14 +50,14 @@ internal static class Program
         if (argSet.Contains("--headless"))
         {
             logger.Info("Headless mode started.");
-            await monitor.RunAsync(cts.Token);
+            monitor.RunAsync(cts.Token).GetAwaiter().GetResult();
             return 0;
         }
 
         if (argSet.Contains("--console"))
         {
             logger.Info("Console mode started.");
-            await monitor.RunAsync(cts.Token);
+            monitor.RunAsync(cts.Token).GetAwaiter().GetResult();
             return 0;
         }
 
