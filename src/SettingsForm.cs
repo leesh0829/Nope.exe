@@ -22,16 +22,17 @@ public sealed class SettingsForm : Form
 
         Text = "Nope.exe 설정";
         Width = 1250;
-        Height = 680;
+        Height = 760;
         StartPosition = FormStartPosition.CenterScreen;
 
         var root = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 3,
+            RowCount = 4,
             Padding = new Padding(10),
         };
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -43,13 +44,38 @@ public sealed class SettingsForm : Form
             WrapContents = true,
         };
 
+        var pollLabel = new Label { Text = "PollInterval(ms)", AutoSize = true, Margin = new Padding(0, 8, 5, 0) };
         _pollIntervalInput = new NumericUpDown { Minimum = 100, Maximum = 10000, Value = Math.Clamp(_config.PollIntervalMs, 100, 10000), Width = 100 };
+
+        var cooldownLabel = new Label { Text = "Cooldown(sec)", AutoSize = true, Margin = new Padding(12, 8, 5, 0) };
         _cooldownInput = new NumericUpDown { Minimum = 1, Maximum = 3600, Value = Math.Clamp(_config.CooldownSeconds, 1, 3600), Width = 100 };
 
-        generalPanel.Controls.Add(new Label { Text = "PollInterval(ms)", AutoSize = true, Margin = new Padding(0, 8, 5, 0) });
+        generalPanel.Controls.Add(pollLabel);
         generalPanel.Controls.Add(_pollIntervalInput);
-        generalPanel.Controls.Add(new Label { Text = "Cooldown(sec)", AutoSize = true, Margin = new Padding(12, 8, 5, 0) });
+        generalPanel.Controls.Add(cooldownLabel);
         generalPanel.Controls.Add(_cooldownInput);
+
+        var helpTip = new ToolTip();
+        helpTip.SetToolTip(pollLabel, "창 목록을 다시 검사하는 주기(밀리초). 낮을수록 반응은 빠르지만 CPU 사용량이 늘어납니다.");
+        helpTip.SetToolTip(_pollIntervalInput, "권장: 500~1000ms");
+        helpTip.SetToolTip(cooldownLabel, "같은 창/같은 규칙에 액션을 다시 적용하기 전 대기 시간(초).");
+        helpTip.SetToolTip(_cooldownInput, "반복 처리 방지용 쿨다운");
+
+        var guideLabel = new Label
+        {
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0, 8, 0, 8),
+            Text =
+                "규칙 설명: 모든 match 조건은 AND(모두 만족)로 평가되며, 빈 칸은 무시됩니다.\n" +
+                "- ProcessNameExact: 프로세스 이름 정확히 일치 (예: notepad)\n" +
+                "- ProcessPathExact: 실행 파일 전체 경로 정확히 일치\n" +
+                "- FileDescriptionContains / CompanyNameContains: 파일 메타데이터 부분 포함\n" +
+                "- WindowTitleRegex: 창 제목 정규식 (대소문자 무시)\n" +
+                "- WindowClassExact: 창 클래스명 정확히 일치\n" +
+                "- Action: Close(정상 닫기), Minimize(최소화), Hide(숨김), KillProcess(강제 종료)\n" +
+                "- CloseTimeoutMs: Close 동작 시 WM_CLOSE 응답 대기 시간(ms)",
+        };
 
         _rows = new BindingList<RuleRow>(_config.Rules.Select(RuleRow.FromRule).ToList());
         _rulesGrid = new DataGridView
@@ -62,21 +88,22 @@ public sealed class SettingsForm : Form
             AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.DisplayedCells,
         };
 
-        _rulesGrid.Columns.Add(new DataGridViewCheckBoxColumn { DataPropertyName = nameof(RuleRow.Enabled), HeaderText = "Enabled" });
-        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.Name), HeaderText = "Name", Width = 180 });
-        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.ProcessNameExact), HeaderText = "ProcessNameExact" });
-        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.ProcessPathExact), HeaderText = "ProcessPathExact", Width = 240 });
-        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.FileDescriptionContains), HeaderText = "FileDescriptionContains" });
-        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.CompanyNameContains), HeaderText = "CompanyNameContains" });
-        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.WindowTitleRegex), HeaderText = "WindowTitleRegex", Width = 180 });
-        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.WindowClassExact), HeaderText = "WindowClassExact" });
+        _rulesGrid.Columns.Add(new DataGridViewCheckBoxColumn { DataPropertyName = nameof(RuleRow.Enabled), HeaderText = "Enabled", ToolTipText = "체크 시 이 규칙 사용" });
+        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.Name), HeaderText = "Name", Width = 180, ToolTipText = "규칙 표시 이름" });
+        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.ProcessNameExact), HeaderText = "ProcessNameExact", ToolTipText = "프로세스 이름 정확히 일치" });
+        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.ProcessPathExact), HeaderText = "ProcessPathExact", Width = 240, ToolTipText = "실행 파일 경로 정확히 일치" });
+        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.FileDescriptionContains), HeaderText = "FileDescriptionContains", ToolTipText = "파일 설명 문자열 포함" });
+        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.CompanyNameContains), HeaderText = "CompanyNameContains", ToolTipText = "회사명 문자열 포함" });
+        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.WindowTitleRegex), HeaderText = "WindowTitleRegex", Width = 180, ToolTipText = "창 제목 정규식" });
+        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.WindowClassExact), HeaderText = "WindowClassExact", ToolTipText = "창 클래스명 정확히 일치" });
         _rulesGrid.Columns.Add(new DataGridViewComboBoxColumn
         {
             DataPropertyName = nameof(RuleRow.ActionType),
             HeaderText = "Action",
             DataSource = Enum.GetValues<RuleActionType>(),
+            ToolTipText = "매칭 시 실행할 동작",
         });
-        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.SendMessageTimeoutMs), HeaderText = "CloseTimeoutMs" });
+        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.SendMessageTimeoutMs), HeaderText = "CloseTimeoutMs", ToolTipText = "Close 액션의 응답 대기 시간(ms)" });
 
         var buttonPanel = new FlowLayoutPanel
         {
@@ -103,8 +130,9 @@ public sealed class SettingsForm : Form
         buttonPanel.Controls.Add(addRuleButton);
 
         root.Controls.Add(generalPanel, 0, 0);
-        root.Controls.Add(_rulesGrid, 0, 1);
-        root.Controls.Add(buttonPanel, 0, 2);
+        root.Controls.Add(guideLabel, 0, 1);
+        root.Controls.Add(_rulesGrid, 0, 2);
+        root.Controls.Add(buttonPanel, 0, 3);
 
         Controls.Add(root);
     }
