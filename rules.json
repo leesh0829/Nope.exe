@@ -1,0 +1,8 @@
+{
+  "pollIntervalMs": 750,
+  "cooldownSeconds": 10,
+  "logFilePath": "logs/app.log",
+  "logMaxBytes": 5242880,
+  "logMaxFiles": 5,
+  "rules": []
+}
