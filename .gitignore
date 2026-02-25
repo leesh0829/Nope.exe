@@ -3,3 +3,18 @@ obj/
 logs/
 *.user
 *.suo
+
+# Visual Studio workspace/cache files
+.vs/
+*.wsuo
+*.sln.docstates
+ProjectSettings.json
+slnx.sqlite
+VSWorkspaceState.json
+DocumentLayout*.json
+
+# IntelliCode / AI cache indexes
+CopilotIndices*/
+CodeChunks*.db*
+SemanticSymbol*.db*
+FileContentIndex/
