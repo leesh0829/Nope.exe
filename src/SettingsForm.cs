@@ -67,6 +67,7 @@ public sealed class SettingsForm : Form
             Dock = DockStyle.Fill,
             Margin = new Padding(0, 8, 0, 8),
             Text =
+                "빠른 설정: 아래에서 규칙 행 선택 → '프로세스 파일 선택' 버튼 클릭 → exe 선택하면 이름/경로가 자동 입력됩니다.\n" +
                 "규칙 설명: 모든 match 조건은 AND(모두 만족)로 평가되며, 빈 칸은 무시됩니다.\n" +
                 "- ProcessNameExact: 프로세스 이름 정확히 일치 (예: notepad)\n" +
                 "- ProcessPathExact: 실행 파일 전체 경로 정확히 일치\n" +
@@ -124,10 +125,18 @@ public sealed class SettingsForm : Form
         var addRuleButton = new Button { Text = "규칙 추가", AutoSize = true };
         addRuleButton.Click += (_, _) => _rows.Add(new RuleRow());
 
+        var pickProcessButton = new Button { Text = "프로세스 파일 선택", AutoSize = true };
+        pickProcessButton.Click += (_, _) => PickProcessFileForSelectedRule();
+
+        var clearAdvancedButton = new Button { Text = "선택 규칙 고급조건 비우기", AutoSize = true };
+        clearAdvancedButton.Click += (_, _) => ClearAdvancedConditionsForSelectedRule();
+
         buttonPanel.Controls.Add(saveButton);
         buttonPanel.Controls.Add(applyButton);
         buttonPanel.Controls.Add(cancelButton);
         buttonPanel.Controls.Add(addRuleButton);
+        buttonPanel.Controls.Add(clearAdvancedButton);
+        buttonPanel.Controls.Add(pickProcessButton);
 
         root.Controls.Add(generalPanel, 0, 0);
         root.Controls.Add(guideLabel, 0, 1);
@@ -148,6 +157,75 @@ public sealed class SettingsForm : Form
     }
 
     private void SaveOnly() => ApplyToConfig();
+
+    private void PickProcessFileForSelectedRule()
+    {
+        _rulesGrid.EndEdit();
+
+        var row = GetSelectedRuleRow();
+        if (row is null)
+        {
+            MessageBox.Show("먼저 규칙 행 하나를 선택하세요.", "Nope.exe", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        using var dialog = new OpenFileDialog
+        {
+            Title = "프로세스 실행 파일 선택",
+            Filter = "실행 파일 (*.exe)|*.exe|모든 파일 (*.*)|*.*",
+            CheckFileExists = true,
+            Multiselect = false,
+        };
+
+        if (dialog.ShowDialog(this) != DialogResult.OK)
+        {
+            return;
+        }
+
+        var selectedPath = dialog.FileName;
+        var processName = Path.GetFileNameWithoutExtension(selectedPath);
+
+        row.ProcessPathExact = selectedPath;
+        row.ProcessNameExact = processName;
+        if (string.IsNullOrWhiteSpace(row.Name) || row.Name == "New Rule")
+        {
+            row.Name = $"{processName} rule";
+        }
+
+        _rulesGrid.Refresh();
+    }
+
+    private void ClearAdvancedConditionsForSelectedRule()
+    {
+        _rulesGrid.EndEdit();
+
+        var row = GetSelectedRuleRow();
+        if (row is null)
+        {
+            MessageBox.Show("먼저 규칙 행 하나를 선택하세요.", "Nope.exe", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        row.FileDescriptionContains = null;
+        row.CompanyNameContains = null;
+        row.WindowTitleRegex = null;
+        row.WindowClassExact = null;
+        _rulesGrid.Refresh();
+    }
+
+    private RuleRow? GetSelectedRuleRow()
+    {
+        if (_rulesGrid.CurrentRow?.DataBoundItem is RuleRow current)
+        {
+            return current;
+        }
+
+        var selected = _rulesGrid.SelectedRows.Cast<DataGridViewRow>()
+            .Select(r => r.DataBoundItem)
+            .OfType<RuleRow>()
+            .FirstOrDefault();
+        return selected;
+    }
 
     private bool ApplyToConfig()
     {
