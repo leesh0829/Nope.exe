@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Drawing;
 using System.Reflection;
 using System.Windows.Forms;
@@ -11,24 +10,30 @@ public sealed class TrayApplicationContext : ApplicationContext
     private readonly MonitorService _monitor;
     private readonly CancellationTokenSource _cts;
     private readonly ILogger _logger;
-    private readonly string _rulesPath;
-    private readonly string _logPath;
+    private readonly ConfigService _configService;
+    private readonly AppConfig _config;
     private readonly ToolStripMenuItem _pauseResumeItem;
+    private SettingsForm? _settingsForm;
 
-    public TrayApplicationContext(MonitorService monitor, CancellationTokenSource cts, ILogger logger, string rulesPath, string logPath)
+    public TrayApplicationContext(
+        MonitorService monitor,
+        CancellationTokenSource cts,
+        ILogger logger,
+        ConfigService configService,
+        AppConfig config)
     {
         _monitor = monitor;
         _cts = cts;
         _logger = logger;
-        _rulesPath = rulesPath;
-        _logPath = logPath;
+        _configService = configService;
+        _config = config;
 
         _pauseResumeItem = new ToolStripMenuItem("일시정지", null, (_, _) => TogglePause());
 
         var menu = new ContextMenuStrip();
         menu.Items.Add(_pauseResumeItem);
-        menu.Items.Add(new ToolStripMenuItem("로그 보기", null, (_, _) => OpenPath(_logPath)));
-        menu.Items.Add(new ToolStripMenuItem("설정 열기", null, (_, _) => OpenPath(_rulesPath)));
+        menu.Items.Add(new ToolStripMenuItem("로그 보기", null, (_, _) => OpenLogsFolder()));
+        menu.Items.Add(new ToolStripMenuItem("설정 열기", null, (_, _) => OpenSettingsUi()));
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(new ToolStripMenuItem("종료", null, (_, _) => Exit()));
 
@@ -53,11 +58,39 @@ public sealed class TrayApplicationContext : ApplicationContext
         _pauseResumeItem.Text = newPausedState ? "재개" : "일시정지";
     }
 
+    private void OpenLogsFolder()
+    {
+        var logDir = Path.Combine(AppContext.BaseDirectory, Path.GetDirectoryName(_config.LogFilePath) ?? "logs");
+        try
+        {
+            Directory.CreateDirectory(logDir);
+            OpenPath(logDir);
+        }
+        catch (Exception ex)
+        {
+            _logger.Warn($"Failed to open logs folder '{logDir}': {ex.Message}");
+        }
+    }
+
+    private void OpenSettingsUi()
+    {
+        if (_settingsForm is not null && !_settingsForm.IsDisposed)
+        {
+            _settingsForm.BringToFront();
+            _settingsForm.Focus();
+            return;
+        }
+
+        _settingsForm = new SettingsForm(_config, _configService, _logger);
+        _settingsForm.FormClosed += (_, _) => _settingsForm = null;
+        _settingsForm.Show();
+    }
+
     private void OpenPath(string path)
     {
         try
         {
-            Process.Start(new ProcessStartInfo
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
                 FileName = path,
                 UseShellExecute = true,
@@ -81,6 +114,7 @@ public sealed class TrayApplicationContext : ApplicationContext
     {
         if (disposing)
         {
+            _settingsForm?.Dispose();
             _notifyIcon.Dispose();
             _cts.Dispose();
         }

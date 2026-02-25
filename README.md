@@ -74,12 +74,21 @@ dotnet run -c Release -- --uninstall-startup
 
 - 일시정지/재개
 - 로그 보기
-- 설정 열기 (`rules.json`)
+- 설정 열기 (내장 설정 UI, JSON 파일 저장)
 - 종료
+
+## 설정 편집
+
+트레이 메뉴의 **설정 열기**를 누르면 규칙 편집 UI가 열립니다.
+
+- 공통 설정: `pollIntervalMs`, `cooldownSeconds`
+- 규칙 행별 편집: enabled, 조건(match), action, timeout
+- **적용/저장** 시 현재 실행 중 설정에 반영되고 `rules.json`에 저장됩니다.
+- 정규식이 잘못되면 저장 전에 오류를 표시합니다.
 
 ## 설정 파일 (`rules.json`)
 
-프로젝트 루트(실행 시에는 exe 폴더 기준) `rules.json`을 사용합니다.
+실행 폴더 기준 `rules.json`을 사용하며, UI로 편집한 내용이 그대로 반영됩니다.
 
 - 모든 조건은 AND
 - 비어있는 조건은 무시

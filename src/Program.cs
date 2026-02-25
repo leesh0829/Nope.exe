@@ -66,8 +66,8 @@ internal static class Program
             monitor,
             cts,
             logger,
-            rulesPath,
-            Path.Combine(AppContext.BaseDirectory, config.LogFilePath));
+            configService,
+            config);
         Application.Run(context);
         return 0;
     }
