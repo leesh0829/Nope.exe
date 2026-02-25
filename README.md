@@ -95,4 +95,4 @@ dotnet run -c Release -- --uninstall-startup
 - 비어있는 조건은 무시
 - 정규식은 .NET Regex (대소문자 무시)
 
-예시는 저장소의 `rules.json`을 참고하세요.
+기본 `rules.json`은 빈 규칙 목록으로 생성되며, 설정창에서 원하는 규칙을 추가해 사용하세요.

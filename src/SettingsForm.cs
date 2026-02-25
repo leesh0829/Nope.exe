@@ -88,6 +88,8 @@ public sealed class SettingsForm : Form
             AllowUserToDeleteRows = true,
             AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.DisplayedCells,
         };
+        _rulesGrid.DataError += OnRulesGridDataError;
+        _rulesGrid.EditingControlShowing += OnRulesGridEditingControlShowing;
 
         _rulesGrid.Columns.Add(new DataGridViewCheckBoxColumn { DataPropertyName = nameof(RuleRow.Enabled), HeaderText = "Enabled", ToolTipText = "체크 시 이 규칙 사용" });
         _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.Name), HeaderText = "Name", Width = 180, ToolTipText = "규칙 표시 이름" });
@@ -144,6 +146,21 @@ public sealed class SettingsForm : Form
         root.Controls.Add(buttonPanel, 0, 3);
 
         Controls.Add(root);
+    }
+
+    private void OnRulesGridDataError(object? sender, DataGridViewDataErrorEventArgs e)
+    {
+        _logger.Warn($"Rules grid edit error at row={e.RowIndex}, column={e.ColumnIndex}: {e.Exception?.Message}");
+        e.ThrowException = false;
+    }
+
+    private void OnRulesGridEditingControlShowing(object? sender, DataGridViewEditingControlShowingEventArgs e)
+    {
+        if (e.Control is ComboBox comboBox)
+        {
+            comboBox.AutoCompleteMode = AutoCompleteMode.None;
+            comboBox.AutoCompleteSource = AutoCompleteSource.None;
+        }
     }
 
     private void SaveAndClose()

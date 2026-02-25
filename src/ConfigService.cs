@@ -53,51 +53,9 @@ public static class DefaultConfigFactory
 {
     public static AppConfig Create()
     {
-        var config = new AppConfig
+        return new AppConfig
         {
-            Rules =
-            [
-                new RuleConfig
-                {
-                    Name = "ExampleApp promotional popups",
-                    Enabled = true,
-                    Match = new MatchConfig
-                    {
-                        ProcessNameExact = "ExampleApp",
-                        WindowTitleRegex = ".*Special Offer.*",
-                    },
-                    Action = new ActionConfig { Type = RuleActionType.Close },
-                },
-                new RuleConfig
-                {
-                    Name = "Example updater dialog",
-                    Enabled = true,
-                    Match = new MatchConfig
-                    {
-                        FileDescriptionContains = "Example Updater",
-                        WindowClassExact = "#32770",
-                    },
-                    Action = new ActionConfig { Type = RuleActionType.Minimize },
-                },
-                new RuleConfig
-                {
-                    Name = "Example hidden helper",
-                    Enabled = false,
-                    Match = new MatchConfig
-                    {
-                        CompanyNameContains = "Example Corp",
-                        WindowTitleRegex = ".*Helper.*",
-                    },
-                    Action = new ActionConfig { Type = RuleActionType.Hide },
-                },
-            ],
+            Rules = [],
         };
-
-        foreach (var rule in config.Rules)
-        {
-            rule.CompileRegex(out _);
-        }
-
-        return config;
     }
 }
