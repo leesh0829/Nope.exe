@@ -169,20 +169,23 @@ public sealed class SettingsForm : Form
             return;
         }
 
-        using var dialog = new OpenFileDialog
+        string? selectedPath;
+        try
         {
-            Title = "프로세스 실행 파일 선택",
-            Filter = "실행 파일 (*.exe)|*.exe|모든 파일 (*.*)|*.*",
-            CheckFileExists = true,
-            Multiselect = false,
-        };
+            selectedPath = SelectExecutableFileWithStaSupport(this);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"프로세스 파일 선택 중 오류: {ex.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            _logger.Error($"Process file picker failed: {ex}");
+            return;
+        }
 
-        if (dialog.ShowDialog(this) != DialogResult.OK)
+        if (string.IsNullOrWhiteSpace(selectedPath))
         {
             return;
         }
 
-        var selectedPath = dialog.FileName;
         var processName = Path.GetFileNameWithoutExtension(selectedPath);
 
         row.ProcessPathExact = selectedPath;
@@ -225,6 +228,60 @@ public sealed class SettingsForm : Form
             .OfType<RuleRow>()
             .FirstOrDefault();
         return selected;
+    }
+
+    private static string? SelectExecutableFileWithStaSupport(IWin32Window? owner)
+    {
+        if (Thread.CurrentThread.GetApartmentState() == ApartmentState.STA)
+        {
+            return ShowExecutableDialog(owner);
+        }
+
+        string? selectedPath = null;
+        Exception? dialogError = null;
+        using var completed = new ManualResetEventSlim(false);
+
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                selectedPath = ShowExecutableDialog(null);
+            }
+            catch (Exception ex)
+            {
+                dialogError = ex;
+            }
+            finally
+            {
+                completed.Set();
+            }
+        });
+
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.IsBackground = true;
+        thread.Start();
+        completed.Wait();
+
+        if (dialogError is not null)
+        {
+            throw new InvalidOperationException("프로세스 파일 선택 창을 여는 중 오류가 발생했습니다.", dialogError);
+        }
+
+        return selectedPath;
+    }
+
+    private static string? ShowExecutableDialog(IWin32Window? owner)
+    {
+        using var dialog = new OpenFileDialog
+        {
+            Title = "프로세스 실행 파일 선택",
+            Filter = "실행 파일 (*.exe)|*.exe|모든 파일 (*.*)|*.*",
+            CheckFileExists = true,
+            Multiselect = false,
+        };
+
+        var result = owner is null ? dialog.ShowDialog() : dialog.ShowDialog(owner);
+        return result == DialogResult.OK ? dialog.FileName : null;
     }
 
     private bool ApplyToConfig()
