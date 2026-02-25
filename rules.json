@@ -1,0 +1,43 @@
+{
+  "pollIntervalMs": 750,
+  "cooldownSeconds": 10,
+  "logFilePath": "logs/app.log",
+  "logMaxBytes": 5242880,
+  "logMaxFiles": 5,
+  "rules": [
+    {
+      "name": "ExampleApp promotional popup",
+      "enabled": true,
+      "match": {
+        "processNameExact": "ExampleApp",
+        "windowTitleRegex": ".*Limited Offer.*"
+      },
+      "action": {
+        "type": "Close",
+        "sendMessageTimeoutMs": 1500
+      }
+    },
+    {
+      "name": "Example updater dialog",
+      "enabled": true,
+      "match": {
+        "fileDescriptionContains": "Example Updater",
+        "windowClassExact": "#32770"
+      },
+      "action": {
+        "type": "Minimize"
+      }
+    },
+    {
+      "name": "Example helper tool hidden",
+      "enabled": false,
+      "match": {
+        "companyNameContains": "Example Corp",
+        "windowTitleRegex": ".*Helper.*"
+      },
+      "action": {
+        "type": "Hide"
+      }
+    }
+  ]
+}
