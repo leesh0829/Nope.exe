@@ -71,9 +71,6 @@ public sealed class SettingsForm : Form
                 "규칙 설명: 모든 match 조건은 AND(모두 만족)로 평가되며, 빈 칸은 무시됩니다.\n" +
                 "- ProcessNameExact: 프로세스 이름 정확히 일치 (예: notepad)\n" +
                 "- ProcessPathExact: 실행 파일 전체 경로 정확히 일치\n" +
-                "- FileDescriptionContains / CompanyNameContains: 파일 메타데이터 부분 포함\n" +
-                "- WindowTitleRegex: 창 제목 정규식 (대소문자 무시)\n" +
-                "- WindowClassExact: 창 클래스명 정확히 일치\n" +
                 "- Action: Close(정상 닫기), Minimize(최소화), Hide(숨김), KillProcess(강제 종료)\n" +
                 "- CloseTimeoutMs: Close 동작 시 WM_CLOSE 응답 대기 시간(ms)",
         };
@@ -94,10 +91,6 @@ public sealed class SettingsForm : Form
         _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.Name), HeaderText = "Name", Width = 180, ToolTipText = "규칙 표시 이름" });
         _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.ProcessNameExact), HeaderText = "ProcessNameExact", ToolTipText = "프로세스 이름 정확히 일치" });
         _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.ProcessPathExact), HeaderText = "ProcessPathExact", Width = 240, ToolTipText = "실행 파일 경로 정확히 일치" });
-        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.FileDescriptionContains), HeaderText = "FileDescriptionContains", ToolTipText = "파일 설명 문자열 포함" });
-        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.CompanyNameContains), HeaderText = "CompanyNameContains", ToolTipText = "회사명 문자열 포함" });
-        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.WindowTitleRegex), HeaderText = "WindowTitleRegex", Width = 180, ToolTipText = "창 제목 정규식" });
-        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(RuleRow.WindowClassExact), HeaderText = "WindowClassExact", ToolTipText = "창 클래스명 정확히 일치" });
         _rulesGrid.Columns.Add(new DataGridViewComboBoxColumn
         {
             DataPropertyName = nameof(RuleRow.ActionType),
@@ -132,15 +125,11 @@ public sealed class SettingsForm : Form
         var pickProcessButton = new Button { Text = "프로세스 파일 선택", AutoSize = true };
         pickProcessButton.Click += (_, _) => PickProcessFileForSelectedRule();
 
-        var clearAdvancedButton = new Button { Text = "선택 규칙 고급조건 비우기", AutoSize = true };
-        clearAdvancedButton.Click += (_, _) => ClearAdvancedConditionsForSelectedRule();
-
         buttonPanel.Controls.Add(saveButton);
         buttonPanel.Controls.Add(applyButton);
         buttonPanel.Controls.Add(cancelButton);
         buttonPanel.Controls.Add(addRuleButton);
         buttonPanel.Controls.Add(deleteRuleButton);
-        buttonPanel.Controls.Add(clearAdvancedButton);
         buttonPanel.Controls.Add(pickProcessButton);
 
         root.Controls.Add(generalPanel, 0, 0);
@@ -206,24 +195,6 @@ public sealed class SettingsForm : Form
             row.Name = $"{processName} rule";
         }
 
-        _rulesGrid.Refresh();
-    }
-
-    private void ClearAdvancedConditionsForSelectedRule()
-    {
-        _rulesGrid.EndEdit();
-
-        var row = GetSelectedRuleRow();
-        if (row is null)
-        {
-            MessageBox.Show("먼저 규칙 행 하나를 선택하세요.", "Nope.exe", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            return;
-        }
-
-        row.FileDescriptionContains = null;
-        row.CompanyNameContains = null;
-        row.WindowTitleRegex = null;
-        row.WindowClassExact = null;
         _rulesGrid.Refresh();
     }
 
@@ -339,22 +310,12 @@ public sealed class SettingsForm : Form
             {
                 if (string.IsNullOrWhiteSpace(row.Name) &&
                     string.IsNullOrWhiteSpace(row.ProcessNameExact) &&
-                    string.IsNullOrWhiteSpace(row.ProcessPathExact) &&
-                    string.IsNullOrWhiteSpace(row.FileDescriptionContains) &&
-                    string.IsNullOrWhiteSpace(row.CompanyNameContains) &&
-                    string.IsNullOrWhiteSpace(row.WindowTitleRegex) &&
-                    string.IsNullOrWhiteSpace(row.WindowClassExact))
+                    string.IsNullOrWhiteSpace(row.ProcessPathExact))
                 {
                     continue;
                 }
 
                 var rule = row.ToRule();
-                if (!rule.CompileRegex(out var error))
-                {
-                    MessageBox.Show($"규칙 '{rule.Name}' 의 정규식이 잘못되었습니다: {error}", "정규식 오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return false;
-                }
-
                 nextRules.Add(rule);
             }
 
@@ -381,10 +342,6 @@ public sealed class SettingsForm : Form
         public bool Enabled { get; set; } = true;
         public string? ProcessNameExact { get; set; }
         public string? ProcessPathExact { get; set; }
-        public string? FileDescriptionContains { get; set; }
-        public string? CompanyNameContains { get; set; }
-        public string? WindowTitleRegex { get; set; }
-        public string? WindowClassExact { get; set; }
         public RuleActionType ActionType { get; set; } = RuleActionType.Close;
         public uint SendMessageTimeoutMs { get; set; } = 1500;
 
@@ -396,10 +353,6 @@ public sealed class SettingsForm : Form
             {
                 ProcessNameExact = NullIfWhitespace(ProcessNameExact),
                 ProcessPathExact = NullIfWhitespace(ProcessPathExact),
-                FileDescriptionContains = NullIfWhitespace(FileDescriptionContains),
-                CompanyNameContains = NullIfWhitespace(CompanyNameContains),
-                WindowTitleRegex = NullIfWhitespace(WindowTitleRegex),
-                WindowClassExact = NullIfWhitespace(WindowClassExact),
             },
             Action = new ActionConfig
             {
@@ -414,10 +367,6 @@ public sealed class SettingsForm : Form
             Enabled = rule.Enabled,
             ProcessNameExact = rule.Match.ProcessNameExact,
             ProcessPathExact = rule.Match.ProcessPathExact,
-            FileDescriptionContains = rule.Match.FileDescriptionContains,
-            CompanyNameContains = rule.Match.CompanyNameContains,
-            WindowTitleRegex = rule.Match.WindowTitleRegex,
-            WindowClassExact = rule.Match.WindowClassExact,
             ActionType = rule.Action.Type,
             SendMessageTimeoutMs = rule.Action.SendMessageTimeoutMs,
         };

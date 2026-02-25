@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 
 namespace NopeExe;
 
@@ -20,39 +19,12 @@ public sealed class RuleConfig
     public MatchConfig Match { get; set; } = new();
     public ActionConfig Action { get; set; } = new();
 
-    [JsonIgnore]
-    public Regex? TitleRegex { get; private set; }
-
-    public bool CompileRegex(out string? error)
-    {
-        error = null;
-        if (string.IsNullOrWhiteSpace(Match.WindowTitleRegex))
-        {
-            TitleRegex = null;
-            return true;
-        }
-
-        try
-        {
-            TitleRegex = new Regex(Match.WindowTitleRegex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-            return true;
-        }
-        catch (ArgumentException ex)
-        {
-            error = ex.Message;
-            return false;
-        }
-    }
 }
 
 public sealed class MatchConfig
 {
     public string? ProcessNameExact { get; set; }
     public string? ProcessPathExact { get; set; }
-    public string? FileDescriptionContains { get; set; }
-    public string? CompanyNameContains { get; set; }
-    public string? WindowTitleRegex { get; set; }
-    public string? WindowClassExact { get; set; }
 }
 
 public sealed class ActionConfig

@@ -8,10 +8,6 @@ Windows용 규칙 기반 창 자동 닫기(또는 최소화/숨김/프로세스 
 - 규칙 기반 매칭 (AND 결합, 빈 조건 무시)
   - `processNameExact`
   - `processPathExact`
-  - `fileDescriptionContains`
-  - `companyNameContains`
-  - `windowTitleRegex`
-  - `windowClassExact`
 - 액션
   - `Close` (기본, `SendMessageTimeout` + `WM_CLOSE`)
   - `Minimize`
@@ -86,7 +82,6 @@ dotnet run -c Release -- --uninstall-startup
 - 규칙 삭제: 행 선택 후 **선택 규칙 삭제** 버튼
 - 빠른 설정: 규칙 행 선택 후 **프로세스 파일 선택** 버튼으로 exe를 고르면 `processNameExact`/`processPathExact` 자동 입력
 - **적용/저장** 시 현재 실행 중 설정에 반영되고 `rules.json`에 저장됩니다.
-- 정규식이 잘못되면 저장 전에 오류를 표시합니다.
 
 ## 설정 파일 (`rules.json`)
 
@@ -94,6 +89,5 @@ dotnet run -c Release -- --uninstall-startup
 
 - 모든 조건은 AND
 - 비어있는 조건은 무시
-- 정규식은 .NET Regex (대소문자 무시)
 
 기본 `rules.json`은 빈 규칙 목록으로 생성되며, 설정창에서 원하는 규칙을 추가해 사용하세요.

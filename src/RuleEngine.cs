@@ -43,14 +43,6 @@ public sealed class RuleEngine
             return false;
         if (!IsBlank(m.ProcessPathExact) && !EqualsIgnoreCase(window.ProcessPath, m.ProcessPathExact))
             return false;
-        if (!IsBlank(m.FileDescriptionContains) && !ContainsIgnoreCase(window.FileDescription, m.FileDescriptionContains!))
-            return false;
-        if (!IsBlank(m.CompanyNameContains) && !ContainsIgnoreCase(window.CompanyName, m.CompanyNameContains!))
-            return false;
-        if (!IsBlank(m.WindowClassExact) && !EqualsIgnoreCase(window.WindowClass, m.WindowClassExact))
-            return false;
-        if (rule.TitleRegex is not null && !rule.TitleRegex.IsMatch(window.WindowTitle))
-            return false;
 
         return true;
     }
@@ -90,7 +82,6 @@ public sealed class RuleEngine
 
     private static bool IsBlank(string? value) => string.IsNullOrWhiteSpace(value);
     private static bool EqualsIgnoreCase(string a, string? b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
-    private static bool ContainsIgnoreCase(string source, string value) => source.Contains(value, StringComparison.OrdinalIgnoreCase);
 }
 
 public sealed class MonitorService

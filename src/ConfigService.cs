@@ -40,14 +40,6 @@ public sealed class ConfigService
             Save(config);
         }
 
-        foreach (var rule in config.Rules)
-        {
-            if (!rule.CompileRegex(out var error))
-            {
-                logger.Warn($"Rule '{rule.Name}' has invalid windowTitleRegex and will never match: {error}");
-            }
-        }
-
         return config;
     }
 
@@ -67,8 +59,7 @@ public sealed class ConfigService
             return true;
         }
 
-        return string.Equals(rule.Match.ProcessNameExact, "ExampleApp", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(rule.Match.CompanyNameContains, "Example Corp", StringComparison.OrdinalIgnoreCase);
+        return string.Equals(rule.Match.ProcessNameExact, "ExampleApp", StringComparison.OrdinalIgnoreCase);
     }
 
     public void Save(AppConfig config)
